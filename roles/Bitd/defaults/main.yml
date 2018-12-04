@@ -3,3 +3,5 @@
 meta:
   name: example-bitd
   namespace: default
+user: foobar
+password: foobar

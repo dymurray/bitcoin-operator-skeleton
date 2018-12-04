@@ -64,3 +64,26 @@
           targetPort: 8332
           name: rpc
   register: svc
+
+- uri:
+    url: http://{{ svc.result.spec.clusterIP }}:{{ svc.result.spec.ports[0].port }}
+    method: POST
+    user: "{{ user }}"
+    password: "{{ password }}"
+    body: "{{ lookup('file', 'getblockchaininfo.json') }}"
+    force_basic_auth: yes
+    body_format: json
+  register: chaininfo
+
+- set_fact:
+    synced: "{{ true if chaininfo.json.result.blocks | int == chaininfo.json.result.headers | int else false }}"
+
+- k8s_status:
+    api_version: bitcoin.example.com/v1
+    kind: Bitd
+    name: "{{ meta.name }}"
+    namespace: "{{ meta.namespace }}"
+    status:
+      blockCount: "{{ chaininfo.json.result.blocks }}"
+      headerCount: "{{ chaininfo.json.result.headers }}"
+      synced: "{{ synced }}"
